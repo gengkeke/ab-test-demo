@@ -22,7 +22,7 @@ export default [
       },
     ],
   },
-  {
+  /*{
     path: '/welcome',
     name: 'welcome',
     icon: 'smile',
@@ -50,10 +50,16 @@ export default [
     icon: 'table',
     path: '/list',
     component: './TableList',
+  },*/
+  {
+    name: 'ABTest',
+    icon: 'table',
+    path: '/abTest',
+    component: './ABTest',
   },
   {
     path: '/',
-    redirect: '/welcome',
+    redirect: '/abTest',
   },
   {
     path: '*',

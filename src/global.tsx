@@ -1,6 +1,7 @@
-import { useIntl } from '@umijs/max';
-import { Button, message, notification } from 'antd';
+import {useIntl} from '@umijs/max';
+import {Button, message, notification} from 'antd';
 import defaultSettings from '../config/defaultSettings';
+import hinaSdk from 'hina-cloud-js-sdk';
 
 const { pwa } = defaultSettings;
 const isHttps = document.location.protocol === 'https:';
@@ -89,3 +90,28 @@ if (pwa) {
 
   clearCache();
 }
+
+//海纳sdk初始化
+hinaSdk.init({
+  serverUrl: 'http://10.254.121.158:8088/gateway/hina-cloud-engine/gather?project=new_category&token=ui5scybH',
+  autoTrackConfig: {
+    clickAutoTrack: false,
+    stayAutoTrack: false
+  },
+  showLog: true,
+})
+
+const uid = Math.floor(Math.random() * 100000000000);
+
+hinaSdk.setUserUId(uid);
+hinaSdk.setDeviceUId('' + uid);
+// 将 SDK 实例赋给全局变量 hina
+window["hina"] = hinaSdk;
+
+const abTest = hinaSdk.use('HinaABTest', {
+  url: '/gateway/hina-cloud-service/abm/divide/query?project-key=ui5scybH',
+
+});
+
+window['abTest'] = abTest;
+window["hina"].track('H_SignUp', {});
