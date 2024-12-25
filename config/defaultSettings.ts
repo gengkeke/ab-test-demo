@@ -15,7 +15,7 @@ const Settings: ProLayoutProps & {
   fixedHeader: false,
   fixSiderbar: true,
   colorWeak: false,
-  title: '',
+  title: ' ',
   pwa: true,
   logo: 'https://himanual.haishuu.com/static/images/hinahishu.png',
   iconfontUrl: '',
