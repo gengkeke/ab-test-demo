@@ -1,12 +1,11 @@
-import { Question, SelectLang, AvatarDropdown, AvatarName } from '@/components';
+import { AvatarDropdown, AvatarName } from '@/components';
+import { currentUser as queryCurrentUser } from '@/services/ant-design-pro/api';
 import { LinkOutlined } from '@ant-design/icons';
 import type { Settings as LayoutSettings } from '@ant-design/pro-components';
 import type { RunTimeLayoutConfig } from '@umijs/max';
 import { history, Link } from '@umijs/max';
 import defaultSettings from '../config/defaultSettings';
 import { errorConfig } from './requestErrorConfig';
-import { currentUser as queryCurrentUser } from '@/services/ant-design-pro/api';
-import React from 'react';
 const isDev = process.env.NODE_ENV === 'development';
 const loginPath = '/user/login';
 
@@ -101,11 +100,7 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
     // 增加一个 loading 的状态
     childrenRender: (children) => {
       // if (initialState?.loading) return <PageLoading />;
-      return (
-        <>
-          {children}
-        </>
-      );
+      return <>{children}</>;
     },
     ...initialState?.settings,
   };
