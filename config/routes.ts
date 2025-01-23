@@ -23,37 +23,31 @@ export default [
     ],
   },
   {
-    path: '/welcome',
-    name: 'welcome',
-    icon: 'smile',
-    component: './Welcome',
+    name: '对话',
+    path: '/chat',
+    component: './Chat',
   },
   {
-    path: '/admin',
-    name: 'admin',
-    icon: 'crown',
-    access: 'canAdmin',
+    name: '知识库',
+    path: '/dataset',
     routes: [
       {
-        path: '/admin',
-        redirect: '/admin/sub-page',
+        path: '/dataset',
+        component: './DataSet',
       },
       {
-        path: '/admin/sub-page',
-        name: 'sub-page',
-        component: './Admin',
+        path: '/dataset/detail',
+        component: './DataSet/detail',
+      },
+      {
+        path: '/dataset/documentDetail',
+        component: './DataSet/DocumentDetail',
       },
     ],
   },
   {
-    name: 'list.table-list',
-    icon: 'table',
-    path: '/list',
-    component: './TableList',
-  },
-  {
     path: '/',
-    redirect: '/welcome',
+    redirect: '/chat',
   },
   {
     path: '*',
