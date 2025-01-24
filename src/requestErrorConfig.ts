@@ -1,22 +1,15 @@
-﻿import type { RequestOptions } from '@@/plugin-request/request';
-import type { RequestConfig } from '@umijs/max';
-import { message, notification } from 'antd';
+﻿import type {RequestOptions} from '@@/plugin-request/request';
+import type {RequestConfig} from '@umijs/max';
+import {history} from '@umijs/max';
+import {message} from 'antd';
 
-// 错误处理方案： 错误类型
-enum ErrorShowType {
-  SILENT = 0,
-  WARN_MESSAGE = 1,
-  ERROR_MESSAGE = 2,
-  NOTIFICATION = 3,
-  REDIRECT = 9,
-}
 // 与后端约定的响应数据格式
 interface ResponseStructure {
+  status?: number;
+  code?: number;
+  message?: string;
   success: boolean;
   data: any;
-  errorCode?: number;
-  errorMessage?: string;
-  showType?: ErrorShowType;
 }
 
 /**
@@ -29,12 +22,12 @@ export const errorConfig: RequestConfig = {
   errorConfig: {
     // 错误抛出
     errorThrower: (res) => {
-      const { success, data, errorCode, errorMessage, showType } =
+      const {success, data, code, message} =
         res as unknown as ResponseStructure;
       if (!success) {
-        const error: any = new Error(errorMessage);
+        const error: any = new Error(message);
         error.name = 'BizError';
-        error.info = { errorCode, errorMessage, showType, data };
+        error.info = {code, message, data};
         throw error; // 抛出自制的错误
       }
     },
@@ -45,34 +38,13 @@ export const errorConfig: RequestConfig = {
       if (error.name === 'BizError') {
         const errorInfo: ResponseStructure | undefined = error.info;
         if (errorInfo) {
-          const { errorMessage, errorCode } = errorInfo;
-          switch (errorInfo.showType) {
-            case ErrorShowType.SILENT:
-              // do nothing
-              break;
-            case ErrorShowType.WARN_MESSAGE:
-              message.warning(errorMessage);
-              break;
-            case ErrorShowType.ERROR_MESSAGE:
-              message.error(errorMessage);
-              break;
-            case ErrorShowType.NOTIFICATION:
-              notification.open({
-                description: errorMessage,
-                message: errorCode,
-              });
-              break;
-            case ErrorShowType.REDIRECT:
-              // TODO: redirect
-              break;
-            default:
-              message.error(errorMessage);
-          }
+          message.error(errorInfo.message);
         }
-      } else if (error.response) {
-        // Axios 的错误
-        // 请求成功发出且服务器也响应了状态码，但状态代码超出了 2xx 的范围
-        message.error(`Response status:${error.response.status}`);
+      } else if (error.response?.status == 401) {
+        // 请求成功发出且服务器也响应了状态码，但状态代码403
+        history.push('/user/login');
+      } else if (error.response?.data) {
+        message.error(`${error.response.data}`);
       } else if (error.request) {
         // 请求已经成功发起，但没有收到响应
         // \`error.request\` 在浏览器中是 XMLHttpRequest 的实例，
@@ -86,20 +58,27 @@ export const errorConfig: RequestConfig = {
   },
 
   // 请求拦截器
-  requestInterceptors: [
-    (config: RequestOptions) => {
-      // 拦截请求配置，进行个性化处理。
-      const url = config?.url;
-      return { ...config, url };
-    },
-  ],
+  requestInterceptors: [(config: RequestOptions) => {
+    // 从 localStorage 获取用户信息
+    const userInfo = localStorage.getItem('userInfo');
+    if (userInfo) {
+      const {token} = JSON.parse(userInfo);
+      if (token) {
+        const headers = {
+          ...config.headers,
+          'Auth': token,
+        };
+        return {...config, headers};
+      }
+    }
+    return config;
+  }],
 
   // 响应拦截器
   responseInterceptors: [
     (response) => {
       // 拦截响应数据，进行个性化处理
-      const { data } = response as unknown as ResponseStructure;
-
+      const {data} = response as unknown as ResponseStructure;
       if (data?.success === false) {
         message.error('请求失败！');
       }

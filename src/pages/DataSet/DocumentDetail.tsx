@@ -163,9 +163,9 @@ const DocumentDetail: React.FC = () => {
   return (
     <Card bordered={false} bodyStyle={{ padding: 0 }}>
       <div className={styles.header}>
-        <Button 
-          type="link" 
-          icon={<ArrowLeftOutlined />} 
+        <Button
+          type="link"
+          icon={<ArrowLeftOutlined />}
           onClick={handleBack}
           style={{ padding: 0 }}
         >
@@ -175,8 +175,8 @@ const DocumentDetail: React.FC = () => {
       <div className={styles.content}>
         <div className={styles.resultsList}>
           {documents.map((item) => (
-            <Card 
-              key={item.id} 
+            <Card
+              key={item.id}
               className={styles.resultCard}
               onClick={() => handleCardClick(item)}
             >
@@ -196,7 +196,8 @@ const DocumentDetail: React.FC = () => {
                 </span>
                 <Space>
                   <Button
-                    type="link"
+                    color="primary"
+                    variant="link"
                     icon={<EditOutlined />}
                     onClick={(e) => handleEdit(e, item)}
                   >
@@ -210,9 +211,9 @@ const DocumentDetail: React.FC = () => {
                     onClick={e => e.stopPropagation()}
                     disabled={item.metadata.no === 1}
                   >
-                    <Button 
-                      type="link" 
-                      danger 
+                    <Button
+                      variant="link"
+                      color="danger"
                       icon={<DeleteOutlined />}
                       onClick={e => e.stopPropagation()}
                       disabled={item.metadata.no === 1}
@@ -281,4 +282,4 @@ const DocumentDetail: React.FC = () => {
   );
 };
 
-export default DocumentDetail; 
+export default DocumentDetail;

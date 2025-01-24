@@ -17,4 +17,13 @@ declare module 'mockjs';
 declare module 'react-fittext';
 declare module 'bizcharts-plugin-slider';
 
+// 定义全局的 Result 类型
+declare type Result<T> = {
+  status: number;
+  code: string;
+  message: string;
+  success: boolean;
+  data: T;
+};
+
 declare const REACT_APP_ENV: 'test' | 'dev' | 'pre' | false;

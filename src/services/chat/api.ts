@@ -26,7 +26,7 @@ export async function chatCompletions(
   params: ChatCompletionsRequest,
   signal?: AbortSignal,
 ) {
-  return request<ChatCompletionsResponse>('/gateway/ai/api/v1/chat/completions', {
+  return request<ChatCompletionsResponse>('/gateway/ai/v1/chat/completions', {
     method: 'POST',
     data: params,
     signal,
