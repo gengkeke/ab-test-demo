@@ -11,11 +11,7 @@
  * @doc https://umijs.org/docs/guides/routes
  */
 export default [
-  {
-    path: '/user',
-    layout: false,
-    routes: [{name: '登录', path: '/user/login', component: './User/Login'}],
-  },
+
   {name: '对话', path: '/chat', component: './Chat'},
   {
     name: '知识库',
@@ -26,6 +22,8 @@ export default [
       {path: '/dataset/documentDetail', component: './DataSet/DocumentDetail'},
     ],
   },
+  {name: '登录', path: '/user/login', layout: false, component: './User/Login'},
+  {name: '用户', path: '/user', component: './User'},
   {path: '/', redirect: '/chat'},
   {path: '*', layout: false, component: './404'},
 ];

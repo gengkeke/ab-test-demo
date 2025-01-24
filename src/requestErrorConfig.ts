@@ -44,7 +44,11 @@ export const errorConfig: RequestConfig = {
         // 请求成功发出且服务器也响应了状态码，但状态代码403
         history.push('/user/login');
       } else if (error.response?.data) {
-        message.error(`${error.response.data}`);
+        if (error.response?.data?.msg) {
+          message.error(`${error.response.data?.msg}`);
+        } else {
+          message.error(`${error.response.data}`);
+        }
       } else if (error.request) {
         // 请求已经成功发起，但没有收到响应
         // \`error.request\` 在浏览器中是 XMLHttpRequest 的实例，

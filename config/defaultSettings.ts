@@ -16,9 +16,9 @@ const Settings: ProLayoutProps & {
   fixSiderbar: true,
   colorWeak: false,
   splitMenus: true,
-  title: ' ',
+  title: false,
   pwa: true,
-  logo: 'https://himanual.haishuu.com/static/images/hinahishu.png',
+  logo: '/hinahishu.png',
   iconfontUrl: '',
   token: {
 

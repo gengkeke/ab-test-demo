@@ -6,7 +6,6 @@ import {message} from 'antd';
 import {createStyles} from 'antd-style';
 import React from 'react';
 import {flushSync} from 'react-dom';
-import Settings from '../../../../config/defaultSettings';
 
 const useStyles = createStyles(({token}) => {
   return {
@@ -73,9 +72,7 @@ const Login: React.FC = () => {
   return (
     <div className={styles.container}>
       <Helmet>
-        <title>
-          {'登录'}- {Settings.title}
-        </title>
+        <title>登录</title>
       </Helmet>
       <div
         style={{
@@ -88,7 +85,7 @@ const Login: React.FC = () => {
             minWidth: 280,
             maxWidth: '75vw',
           }}
-          logo={<img alt="logo" src="https://himanual.haishuu.com/static/images/hinahishu.png"/>}
+          logo={<img alt="logo" src="/hinahishu.png"/>}
           subTitle={'欢迎使用海纳致远AI系统'}
           onFinish={async (values) => {
             await handleSubmit(values as API.LoginParams);
