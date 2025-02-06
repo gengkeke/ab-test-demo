@@ -7,7 +7,7 @@ import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
 import {Prism as SyntaxHighlighter} from 'react-syntax-highlighter';
 import {vscDarkPlus} from 'react-syntax-highlighter/dist/esm/styles/prism';
-import {chatCompletions, handleStreamResponse, type Message} from '@/services/chat/api';
+import {chatCompletions, handleStreamResponse, type Message, getModels, type ModelOption} from '@/services/chat/api';
 import styles from './index.less';
 
 // 导入自定义头像图片
@@ -18,19 +18,6 @@ const {TextArea} = Input;
 // 本地存储的键名
 const STORAGE_KEY = 'chat_sessions';
 const CURRENT_SESSION_KEY = 'current_session_id';
-
-// 定义可选模型
-const MODELS = [
-  {
-    label: 'Qwen 2.5 14B',
-    value: 'Qwen/Qwen2.5-14B-Instruct-GPTQ-Int8',
-  },
-  {
-    label: 'GPT-4o',
-    value: 'gpt-4o',
-  },
-  // 可以添加更多模型选项
-];
 
 // 预设提示词列表
 const PROMPT_EXAMPLES = [
@@ -68,7 +55,8 @@ const Chat: React.FC = () => {
 
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
-  const [currentModel, setCurrentModel] = useState(MODELS[0].value);
+  const [models, setModels] = useState<ModelOption[]>([]);
+  const [currentModel, setCurrentModel] = useState<string>('');
 
   // 用于取消请求
   const abortController = useRef<AbortController | null>(null);
@@ -86,6 +74,25 @@ const Chat: React.FC = () => {
     localStorage.setItem(CURRENT_SESSION_KEY, currentSessionId);
   }, [currentSessionId]);
 
+  // 获取模型列表
+  useEffect(() => {
+    const fetchModels = async () => {
+      try {
+        const response = await getModels();
+        if (response.success && response.data) {
+          setModels(response.data);
+          // 如果有模型数据，设置第一个为默认值
+          if (response.data.length > 0) {
+            setCurrentModel(response.data[0].modelValue);
+          }
+        }
+      } catch (error) {
+        console.error('获取模型列表失败:', error);
+        message.error('获取模型列表失败');
+      }
+    };
+    fetchModels();
+  }, []);
 
   // 创建新会话
   const createNewSession = () => {
@@ -407,7 +414,12 @@ const Chat: React.FC = () => {
               <Select
                 value={currentModel}
                 onChange={setCurrentModel}
-                options={MODELS}
+                options={models.map(model => ({
+                  label: model.modelName,
+                  value: model.modelValue,
+                }))}
+                loading={models.length === 0}
+                placeholder="请选择模型"
               />
             </div>
             <div className={styles.inputWrapper}>
