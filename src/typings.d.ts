@@ -1,6 +1,9 @@
 declare module 'slash2';
 declare module '*.css';
-declare module '*.less';
+declare module '*.less' {
+  const content: { [className: string]: string };
+  export default content;
+}
 declare module '*.scss';
 declare module '*.sass';
 declare module '*.svg';
@@ -27,3 +30,48 @@ declare type Result<T> = {
 };
 
 declare const REACT_APP_ENV: 'test' | 'dev' | 'pre' | false;
+
+// 声明 rehype-sanitize 模块
+declare module 'rehype-sanitize' {
+  const defaultSchema: any;
+  const rehypeSanitize: any;
+  export { defaultSchema };
+  export default rehypeSanitize;
+}
+
+// 扩展 react-markdown 的组件类型
+declare module 'react-markdown' {
+  import { ReactNode, ComponentType } from 'react';
+
+  interface ReactMarkdownProps {
+    children: string;
+    remarkPlugins?: any[];
+    rehypePlugins?: any[];
+    components?: {
+      [key: string]: ComponentType<any>;
+    };
+  }
+
+  const ReactMarkdown: ComponentType<ReactMarkdownProps>;
+  export = ReactMarkdown;
+
+  export interface Components {
+    p?: ComponentType<{
+      children?: ReactNode;
+      [key: string]: any;
+    }>;
+    think?: ComponentType<{
+      children?: ReactNode;
+    }>;
+    code?: ComponentType<{
+      node?: any;
+      inline?: boolean;
+      className?: string;
+      children?: ReactNode;
+      [key: string]: any;
+    }>;
+    table?: ComponentType<{
+      children?: ReactNode;
+    }>;
+  }
+}

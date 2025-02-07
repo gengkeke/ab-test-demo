@@ -1,14 +1,14 @@
 import React, {useEffect, useRef, useState, useCallback} from 'react';
 import {Avatar, Button, Input, Layout, List, Menu, message, Select, Modal, InputNumber} from 'antd';
-import {PlusOutlined, SendOutlined, UserOutlined, RobotOutlined, DeleteOutlined} from '@ant-design/icons';
+import {PlusOutlined, SendOutlined, UserOutlined, RobotOutlined, DeleteOutlined, BulbOutlined} from '@ant-design/icons';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
-import rehypeSanitize from 'rehype-sanitize';
+import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import {Prism as SyntaxHighlighter} from 'react-syntax-highlighter';
 import {vscDarkPlus} from 'react-syntax-highlighter/dist/esm/styles/prism';
-import {chatCompletions, handleStreamResponse, type Message, getModels} from '@/services/chat/api';
-import {type ModelOption, getKnowledgeList} from '@/services/dataset/api';
+import {chatCompletions, handleStreamResponse, type Message, getModels, type ModelOption} from '@/services/chat/api';
+import {getKnowledgeList} from '@/services/dataset/api';
 import styles from './index.less';
 
 // 导入自定义头像图片
@@ -41,6 +41,61 @@ interface KnowledgeDO {
   knowledgeName: string;
   knowledgeCode: string;
 }
+
+// 自定义代码块渲染
+const CodeBlock = ({language, value}: { language: string; value: string }) => {
+  return (
+    <SyntaxHighlighter
+      language={language}
+      style={vscDarkPlus}
+      showLineNumbers
+      wrapLines
+    >
+      {value}
+    </SyntaxHighlighter>
+  );
+};
+
+// 自定义 sanitize schema
+const schema = {
+  ...defaultSchema,
+  tagNames: [
+    ...(defaultSchema.tagNames || []),
+    'think'
+  ],
+  attributes: {
+    ...defaultSchema.attributes,
+    think: []
+  }
+};
+
+// 自定义处理器来处理 HTML 内容
+const customComponents = {
+  code({inline, className, children, ...props}: {
+    inline?: boolean;
+    className?: string;
+    children: React.ReactNode;
+  }) {
+    const match = /language-(\w+)/.exec(className || '');
+    return !inline && match ? (
+      <CodeBlock
+        language={match[1]}
+        value={String(children).replace(/\n$/, '')}
+      />
+    ) : (
+      <code className={className} {...props}>
+        {children}
+      </code>
+    );
+  },
+  table({children}: { children: React.ReactNode }) {
+    return (
+      <div className={styles.tableWrapper}>
+        <table>{children}</table>
+      </div>
+    );
+  },
+};
 
 const Chat: React.FC = () => {
   // 状态管理
@@ -322,20 +377,6 @@ const Chat: React.FC = () => {
     }
   };
 
-  // 自定义代码块渲染
-  const CodeBlock = ({language, value}: { language: string; value: string }) => {
-    return (
-      <SyntaxHighlighter
-        language={language}
-        style={vscDarkPlus}
-        showLineNumbers
-        wrapLines
-      >
-        {value}
-      </SyntaxHighlighter>
-    );
-  };
-
   // 处理提示词点击
   const handlePromptClick = (prompt: string) => {
     setInputValue(prompt);
@@ -467,32 +508,16 @@ const Chat: React.FC = () => {
                       ) : (
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
-                          rehypePlugins={[rehypeRaw, rehypeSanitize]}
-                          components={{
-                            code({node, inline, className, children, ...props}) {
-                              const match = /language-(\w+)/.exec(className || '');
-                              return !inline && match ? (
-                                <CodeBlock
-                                  language={match[1]}
-                                  value={String(children).replace(/\n$/, '')}
-                                />
-                              ) : (
-                                <code className={className} {...props}>
-                                  {children}
-                                </code>
-                              );
-                            },
-                            // 自定义其他 Markdown 元素的渲染
-                            table({children}) {
-                              return (
-                                <div className={styles.tableWrapper}>
-                                  <table>{children}</table>
-                                </div>
-                              );
-                            },
-                          }}
+                          rehypePlugins={[rehypeRaw]}
+                          components={customComponents}
                         >
-                          {message.content}
+                          {message.content.includes('<think>') 
+                            ? message.content.replace(
+                                /<think>([\s\S]*?)<\/think>/g,
+                                (_, content) => `<div class="${styles.thinkContent}"><div class="${styles.thinkHeader}"><span class="${styles.thinkIcon}"><span class="anticon"><svg viewBox="64 64 896 896" focusable="false" data-icon="bulb" width="1em" height="1em" fill="currentColor" aria-hidden="true"><path d="M632 888H392c-4.4 0-8 3.6-8 8v32c0 17.7 14.3 32 32 32h192c17.7 0 32-14.3 32-32v-32c0-4.4-3.6-8-8-8zM512 64c-181.1 0-328 146.9-328 328 0 121.4 66 227.4 164 284.1V792c0 17.7 14.3 32 32 32h264c17.7 0 32-14.3 32-32V676.1c98-56.7 164-162.7 164-284.1 0-181.1-146.9-328-328-328zm127.9 549.8L604 634.6V752H420V634.6l-35.9-20.8C305.4 568.3 256 484.5 256 392c0-141.4 114.6-256 256-256s256 114.6 256 256c0 92.5-49.4 176.3-128.1 221.8z"></path></svg></span></span><span class="${styles.thinkLabel}">深度思考</span></div><div class="${styles.thinkBody}">${content}</div></div>`
+                              )
+                            : message.content
+                          }
                         </ReactMarkdown>
                       )}
                     </div>

@@ -24,6 +24,11 @@ export interface ChatCompletionsResponse {
   }[];
 }
 
+export interface ModelOption {
+  modelName: string;
+  modelValue: string;
+}
+
 export async function chatCompletions(
   params: ChatCompletionsRequest,
   signal?: AbortSignal,
@@ -124,5 +129,41 @@ export async function handleStreamResponse(
 export async function getModels() {
   return request<Result<ModelOption[]>>('/gateway/ai/v1/models', {
     method: 'GET',
+  });
+}
+
+/** ChatBot助手流式聊天接口 */
+export async function chatBotCompletions(
+  params: ChatCompletionsRequest,
+  signal?: AbortSignal,
+) {
+  if (params.stream) {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Accept': 'text/event-stream',
+    };
+
+    // 从 localStorage 获取认证信息
+    const userInfo = localStorage.getItem('userInfo');
+    if (userInfo) {
+      const { token } = JSON.parse(userInfo);
+      if (token) {
+        headers['Auth'] = token;
+      }
+    }
+
+    const response = await fetch('/gateway/ai/chatbot/chat/completions', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(params),
+      signal,
+    });
+    return response;
+  }
+
+  return request<ChatCompletionsResponse>('/gateway/ai/chatbot/chat/completions', {
+    method: 'POST',
+    data: params,
+    signal,
   });
 }

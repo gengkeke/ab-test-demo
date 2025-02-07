@@ -38,11 +38,6 @@ export interface SearchResponse {
   data: SearchResult[];
 }
 
-export interface ModelOption {
-  modelName: string;
-  modelValue: string;
-}
-
 export interface KnowledgeDO {
   knowledgeCode: string;
   knowledgeName: string;

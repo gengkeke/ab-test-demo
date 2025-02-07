@@ -13,6 +13,7 @@
 export default [
 
   {name: '对话', path: '/chat', component: './Chat'},
+  {name: 'HainaBot', path: '/hainaBot', component: './HainaBot'},
   {
     name: '知识库',
     path: '/dataset',
@@ -23,6 +24,7 @@ export default [
     ],
   },
   {name: '登录', path: '/user/login', layout: false, component: './User/Login'},
+
   {name: '用户', path: '/user', component: './User'},
   {path: '/', redirect: '/chat'},
   {path: '*', layout: false, component: './404'},

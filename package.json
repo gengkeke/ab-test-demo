@@ -66,6 +66,7 @@
     "react-syntax-highlighter": "^15.6.1",
     "rehype-raw": "^7.0.0",
     "rehype-sanitize": "^6.0.0",
+    "remark-directive": "^3.0.1",
     "remark-gfm": "^4.0.0"
   },
   "devDependencies": {
@@ -79,6 +80,7 @@
     "@types/react": "^18.2.48",
     "@types/react-dom": "^18.2.18",
     "@types/react-helmet": "^6.1.11",
+    "@types/react-syntax-highlighter": "^15.5.13",
     "@umijs/fabric": "^2.14.1",
     "@umijs/lint": "^4.1.1",
     "@umijs/max": "^4.1.1",

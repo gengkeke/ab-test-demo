@@ -391,6 +391,59 @@
               color: rgba(149, 128, 247, 0.9);
             }
           }
+
+          // 添加思考内容的样式
+          .thinkContent {
+            background: rgba(255, 250, 230, 0.3);
+            border-radius: 8px;
+            margin: 12px 0;
+            overflow: hidden;
+            border: 1px solid rgba(250, 219, 95, 0.2);
+            transition: all 0.3s ease;
+
+            &:hover {
+              background: rgba(255, 250, 230, 0.5);
+              border-color: rgba(250, 219, 95, 0.3);
+            }
+
+            .thinkHeader {
+              display: flex;
+              align-items: center;
+              padding: 8px 12px;
+              background: rgba(255, 247, 214, 0.7);
+              border-bottom: 1px solid rgba(250, 219, 95, 0.15);
+
+              .thinkIcon {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 24px;
+                height: 24px;
+                border-radius: 6px;
+                background: linear-gradient(135deg, #FFD666 0%, #FFC53D 100%);
+                margin-right: 8px;
+
+                .anticon {
+                  font-size: 14px;
+                  color: #874d00;
+                }
+              }
+
+              .thinkLabel {
+                color: #874d00;
+                font-size: 14px;
+                font-weight: 500;
+              }
+            }
+
+            .thinkBody {
+              padding: 12px;
+              color: #8b8b8b;
+              font-size: 14px;
+              line-height: 1.6;
+              font-style: italic;
+            }
+          }
         }
 
         &.user .messageContent::before {
