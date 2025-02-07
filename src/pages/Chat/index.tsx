@@ -1,6 +1,6 @@
 import React, {useEffect, useRef, useState, useCallback} from 'react';
-import {Avatar, Button, Input, Layout, List, Menu, message, Select, Modal, InputNumber} from 'antd';
-import {PlusOutlined, SendOutlined, UserOutlined, RobotOutlined, DeleteOutlined, BulbOutlined} from '@ant-design/icons';
+import {Avatar, Button, Input, Layout, List, Menu, message, Select, Modal, InputNumber, Space, Tag, Tooltip} from 'antd';
+import {PlusOutlined, SendOutlined, UserOutlined, RobotOutlined, DeleteOutlined, BulbOutlined, SettingOutlined} from '@ant-design/icons';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -28,6 +28,56 @@ const PROMPT_EXAMPLES = [
     prompts: ['介绍一下你自己', '帮我生成详尽的工作周报，以及本周的心得体会',
       '请使用鸡汤文风格写一则生动的文案', '请用SWOT帮我分析一下"在线短剧"',
       '使用[python]写[文本相似度分析]的代码']
+  }
+];
+
+// 定义工具常量
+const CHAT_TOOLS = [
+  {
+    type: 'function',
+    function: {
+      name: 'today-date',
+      nameCn: '当前日期',
+      description: '获取当前时间日期,用于处理时间问题'
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'realtime-weather-ask',
+      nameCn: '天气',
+      description: '获取当前天气情况',
+      parameters: {
+        type: 'object',
+        properties: {
+          city: {
+            name: 'city',
+            type: 'string',
+            description: '城市名称'
+          }
+        },
+        required: ['city']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'search-engine',
+      nameCn: '搜索引擎',
+      description: '根据搜索词，搜索实时信息，比如：查日期、查天气、查时事、查新闻、查名人、查历史等',
+      parameters: {
+        type: 'object',
+        properties: {
+          q: {
+            name: 'q',
+            type: 'string',
+            description: '查询关键词,中文'
+          }
+        },
+        required: ['q']
+      }
+    }
   }
 ];
 
@@ -121,6 +171,8 @@ const Chat: React.FC = () => {
   const [temperature, setTemperature] = useState<number>(0.6);
   const [knowledgeList, setKnowledgeList] = useState<KnowledgeDO[]>([]);
   const [selectedKnowledge, setSelectedKnowledge] = useState<string[]>([]);
+  const [selectedTools, setSelectedTools] = useState<string[]>([]);
+  const [showSettings, setShowSettings] = useState(false);
 
   // 用于取消请求
   const abortController = useRef<AbortController | null>(null);
@@ -315,14 +367,20 @@ const Chat: React.FC = () => {
     try {
       setLoading(true);
 
+      const chatParams = {
+        messages: currentMessages,
+        stream: true,
+        model: currentModel,
+        temperature: temperature,
+        ...(selectedKnowledge.length > 0 ? { knowledgeCodeList: selectedKnowledge } : {}),
+        ...(selectedTools.length > 0 ? { 
+          tools: CHAT_TOOLS.filter(tool => selectedTools.includes(tool.function.name)),
+          toolChoice: 'auto'
+        } : {})
+      };
+
       const response = await chatCompletions(
-        {
-          messages: currentMessages,
-          stream: true,
-          model: currentModel,
-          temperature: temperature,
-          ...(selectedKnowledge.length > 0 ? { knowledgeCodeList: selectedKnowledge } : {}),
-        },
+        chatParams,
         abortController.current.signal,
       );
 
@@ -399,6 +457,97 @@ const Chat: React.FC = () => {
         setCurrentSessionId(Date.now().toString());
       },
     });
+  };
+
+  // 获取选中工具的中文名称
+  const getSelectedToolNames = () => {
+    return selectedTools
+      .map(toolName => CHAT_TOOLS.find(tool => tool.function.name === toolName)?.function.nameCn)
+      .filter(Boolean)
+      .join(', ');
+  };
+
+  // 获取选中知识库的名称
+  const getSelectedKnowledgeNames = () => {
+    return selectedKnowledge
+      .map(code => knowledgeList.find(k => k.knowledgeCode === code)?.knowledgeName)
+      .filter(Boolean)
+      .join(', ');
+  };
+
+  // 获取当前模型名称
+  const getCurrentModelName = () => {
+    return models.find(m => m.modelValue === currentModel)?.modelName || '';
+  };
+
+  // 渲染设置弹窗
+  const renderSettingsModal = () => {
+    return (
+      <Modal
+        title="对话设置"
+        open={showSettings}
+        onCancel={() => setShowSettings(false)}
+        footer={null}
+        width={800}
+      >
+        <Space direction="vertical" style={{ width: '100%' }} size="large">
+          <div>
+            <div style={{ marginBottom: 8 }}>工具选择</div>
+            <Select
+              mode="multiple"
+              value={selectedTools}
+              onChange={setSelectedTools}
+              options={CHAT_TOOLS.map(tool => ({
+                label: `${tool.function.nameCn} - ${tool.function.description}`,
+                value: tool.function.name,
+              }))}
+              placeholder="请选择工具"
+              style={{ width: '100%' }}
+            />
+          </div>
+          <div>
+            <div style={{ marginBottom: 8 }}>温度设置</div>
+            <InputNumber
+              value={temperature}
+              onChange={(value) => setTemperature(value || 0.6)}
+              min={0}
+              max={2}
+              step={0.1}
+              precision={1}
+              style={{ width: '100%' }}
+            />
+          </div>
+          <div>
+            <div style={{ marginBottom: 8 }}>知识库选择</div>
+            <Select
+              mode="multiple"
+              value={selectedKnowledge}
+              onChange={setSelectedKnowledge}
+              options={knowledgeList.map(knowledge => ({
+                label: knowledge.knowledgeName,
+                value: knowledge.knowledgeCode,
+              }))}
+              placeholder="请选择知识库"
+              style={{ width: '100%' }}
+            />
+          </div>
+          <div>
+            <div style={{ marginBottom: 8 }}>模型选择</div>
+            <Select
+              value={currentModel}
+              onChange={setCurrentModel}
+              options={models.map(model => ({
+                label: model.modelName,
+                value: model.modelValue,
+              }))}
+              loading={models.length === 0}
+              placeholder="请选择模型"
+              style={{ width: '100%' }}
+            />
+          </div>
+        </Space>
+      </Modal>
+    );
   };
 
   // 在组件卸载时清理
@@ -527,44 +676,26 @@ const Chat: React.FC = () => {
             />
           )}
           <div className={styles.inputArea}>
-            <div className={styles.modelSelector}>
-              <InputNumber
-                value={temperature}
-                onChange={(value) => setTemperature(value || 0.6)}
-                min={0}
-                max={2}
-                step={0.1}
-                precision={1}
-                style={{ width: 100, marginRight: 8 }}
-                addonBefore="温度"
-              />
-              <div className={styles.knowledgeSelectWrapper}>
-                <span className={styles.knowledgeLabel}>知识库</span>
-                <Select
-                  mode="multiple"
-                  value={selectedKnowledge}
-                  onChange={setSelectedKnowledge}
-                  options={knowledgeList.map(knowledge => ({
-                    label: knowledge.knowledgeName,
-                    value: knowledge.knowledgeCode,
-                  }))}
-                  placeholder="请选择知识库"
-                  style={{ minWidth: 200 }}
-                />
-              </div>
-              <div className={styles.modelSelectWrapper}>
-                <span className={styles.modelLabel}>模型</span>
-                <Select
-                  value={currentModel}
-                  onChange={setCurrentModel}
-                  options={models.map(model => ({
-                    label: model.modelName,
-                    value: model.modelValue,
-                  }))}
-                  loading={models.length === 0}
-                  placeholder="请选择模型"
-                />
-              </div>
+            <div className={styles.settingsBar}>
+              <Space size="middle">
+                <Tooltip title="点击设置">
+                  <Button
+                    type="text"
+                    icon={<SettingOutlined />}
+                    onClick={() => setShowSettings(true)}
+                  />
+                </Tooltip>
+                <Space size={4}>
+                  {selectedTools.length > 0 && (
+                    <Tag>工具: {getSelectedToolNames()}</Tag>
+                  )}
+                  <Tag>温度: {temperature}</Tag>
+                  {selectedKnowledge.length > 0 && (
+                    <Tag>知识库: {getSelectedKnowledgeNames()}</Tag>
+                  )}
+                  <Tag>模型: {getCurrentModelName()}</Tag>
+                </Space>
+              </Space>
             </div>
             <div className={styles.inputWrapper}>
               <TextArea
@@ -588,6 +719,7 @@ const Chat: React.FC = () => {
               />
             </div>
           </div>
+          {renderSettingsModal()}
         </Content>
       </Layout>
     </Layout>
