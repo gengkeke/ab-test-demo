@@ -9,6 +9,8 @@ export interface ChatCompletionsRequest {
   messages: Message[];
   stream?: boolean;
   model?: string;
+  temperature?: number;
+  knowledgeCodeList?: string[];
 }
 
 export interface ChatCompletionsResponse {
@@ -22,15 +24,34 @@ export interface ChatCompletionsResponse {
   }[];
 }
 
-export interface ModelOption {
-  modelName: string;
-  modelValue: string;
-}
-
 export async function chatCompletions(
   params: ChatCompletionsRequest,
   signal?: AbortSignal,
 ) {
+  if (params.stream) {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Accept': 'text/event-stream',
+    };
+
+    // 从 localStorage 获取认证信息
+    const userInfo = localStorage.getItem('userInfo');
+    if (userInfo) {
+      const { token } = JSON.parse(userInfo);
+      if (token) {
+        headers['Auth'] = token;
+      }
+    }
+
+    const response = await fetch('/gateway/ai/v1/chat/completions', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(params),
+      signal,
+    });
+    return response;
+  }
+
   return request<ChatCompletionsResponse>('/gateway/ai/v1/chat/completions', {
     method: 'POST',
     data: params,
@@ -46,6 +67,7 @@ export async function handleStreamResponse(
 ) {
   const reader = response.body?.getReader();
   const decoder = new TextDecoder();
+  let buffer = ''; // 用于存储不完整的数据
 
   try {
     while (reader) {
@@ -55,24 +77,36 @@ export async function handleStreamResponse(
         break;
       }
 
-      const chunk = decoder.decode(value);
-      const lines = chunk
-        .split('\n')
-        .filter(line => line.trim() !== '');
+      // 将新的数据添加到缓冲区
+      buffer += decoder.decode(value, { stream: true });
+      
+      // 按行分割并处理每一行
+      const lines = buffer.split('\n');
+      // 保留最后一行（可能不完整）
+      buffer = lines.pop() || '';
 
       for (const line of lines) {
-        if (line.includes('[DONE]')) {
+        const trimmedLine = line.trim();
+        if (!trimmedLine) continue;
+
+        if (trimmedLine === 'data: [DONE]') {
           onFinish();
           return;
         }
 
-        if (line.startsWith('data: ')) {
+        if (trimmedLine.startsWith('data: ')) {
           try {
-            const data = JSON.parse(line.slice(6));
-            onChunk(data);
+            const jsonStr = trimmedLine.slice(6);
+            // 检查 JSON 字符串是否完整
+            if (jsonStr && jsonStr.trim()) {
+              const data = JSON.parse(jsonStr);
+              onChunk(data);
+            }
           } catch (error) {
+            console.warn('JSON parse error:', trimmedLine);
             if (error instanceof Error) {
-              onError(error);
+              // 不中断流程，只记录错误
+              console.error('Parse error:', error.message);
             }
           }
         }

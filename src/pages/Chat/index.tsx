@@ -1,5 +1,5 @@
-import React, {useEffect, useRef, useState} from 'react';
-import {Avatar, Button, Input, Layout, List, Menu, message, Select, Modal} from 'antd';
+import React, {useEffect, useRef, useState, useCallback} from 'react';
+import {Avatar, Button, Input, Layout, List, Menu, message, Select, Modal, InputNumber} from 'antd';
 import {PlusOutlined, SendOutlined, UserOutlined, RobotOutlined, DeleteOutlined} from '@ant-design/icons';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -7,7 +7,8 @@ import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
 import {Prism as SyntaxHighlighter} from 'react-syntax-highlighter';
 import {vscDarkPlus} from 'react-syntax-highlighter/dist/esm/styles/prism';
-import {chatCompletions, handleStreamResponse, type Message, getModels, type ModelOption} from '@/services/chat/api';
+import {chatCompletions, handleStreamResponse, type Message, getModels} from '@/services/chat/api';
+import {type ModelOption, getKnowledgeList} from '@/services/dataset/api';
 import styles from './index.less';
 
 // 导入自定义头像图片
@@ -36,6 +37,11 @@ interface ChatSession {
   messages: Message[];
 }
 
+interface KnowledgeDO {
+  knowledgeName: string;
+  knowledgeCode: string;
+}
+
 const Chat: React.FC = () => {
   // 状态管理
   const [sessions, setSessions] = useState<ChatSession[]>(() => {
@@ -57,6 +63,9 @@ const Chat: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [models, setModels] = useState<ModelOption[]>([]);
   const [currentModel, setCurrentModel] = useState<string>('');
+  const [temperature, setTemperature] = useState<number>(0.6);
+  const [knowledgeList, setKnowledgeList] = useState<KnowledgeDO[]>([]);
+  const [selectedKnowledge, setSelectedKnowledge] = useState<string[]>([]);
 
   // 用于取消请求
   const abortController = useRef<AbortController | null>(null);
@@ -73,6 +82,22 @@ const Chat: React.FC = () => {
   useEffect(() => {
     localStorage.setItem(CURRENT_SESSION_KEY, currentSessionId);
   }, [currentSessionId]);
+
+  // 获取知识库列表
+  useEffect(() => {
+    const fetchKnowledgeList = async () => {
+      try {
+        const response = await getKnowledgeList();
+        if (response.success && response.data) {
+          setKnowledgeList(response.data);
+        }
+      } catch (error) {
+        console.error('获取知识库列表失败:', error);
+        message.error('获取知识库列表失败');
+      }
+    };
+    fetchKnowledgeList();
+  }, []);
 
   // 获取模型列表
   useEffect(() => {
@@ -147,6 +172,57 @@ const Chat: React.FC = () => {
     );
   };
 
+  // 添加防抖函数
+  const debounce = (func: Function, wait: number) => {
+    let timeout: NodeJS.Timeout;
+    return (...args: any[]) => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func(...args), wait);
+    };
+  };
+
+  // 使用 useRef 来存储当前的流式内容
+  const streamContentRef = useRef('');
+  const displayContentRef = useRef('');
+  const pendingContentRef = useRef('');
+  const animationFrameRef = useRef<number>();
+  
+  // 创建打字机效果的更新函数
+  const updateWithTypingEffect = useCallback((sessionId: string, currentMessages: Message[], newContent: string) => {
+    if (pendingContentRef.current !== newContent) {
+      pendingContentRef.current = newContent;
+      if (!animationFrameRef.current) {
+        const animate = () => {
+          if (displayContentRef.current.length < pendingContentRef.current.length) {
+            // 每次添加一个字符
+            displayContentRef.current = pendingContentRef.current.slice(0, displayContentRef.current.length + 1);
+            
+            const messagesWithTyping: Message[] = [
+              ...currentMessages,
+              {
+                role: 'assistant' as const,
+                content: displayContentRef.current,
+              },
+            ];
+            
+            setSessions(prevSessions =>
+              prevSessions.map(session =>
+                session.id === sessionId
+                  ? {...session, messages: messagesWithTyping}
+                  : session
+              )
+            );
+            
+            animationFrameRef.current = requestAnimationFrame(animate);
+          } else {
+            animationFrameRef.current = undefined;
+          }
+        };
+        animationFrameRef.current = requestAnimationFrame(animate);
+      }
+    }
+  }, []);
+
   // 修改发送消息的处理函数
   const handleSend = async () => {
     if (!inputValue.trim() || loading) return;
@@ -161,24 +237,36 @@ const Chat: React.FC = () => {
     if (abortController.current) {
       abortController.current.abort();
     }
+    
+    // 取消当前的动画
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = undefined;
+    }
 
     abortController.current = new AbortController();
+    
+    // 重置所有内容引用
+    streamContentRef.current = '';
+    displayContentRef.current = '';
+    pendingContentRef.current = '';
 
     // 创建新的消息数组
     const currentMessages = [...(currentSession?.messages || []), userMessage];
 
     // 更新用户消息
     updateSessionMessages(currentSessionId, currentMessages);
-
+    
     try {
       setLoading(true);
-      let streamContent = '';
 
       const response = await chatCompletions(
         {
           messages: currentMessages,
           stream: true,
           model: currentModel,
+          temperature: temperature,
+          ...(selectedKnowledge.length > 0 ? { knowledgeCodeList: selectedKnowledge } : {}),
         },
         abortController.current.signal,
       );
@@ -189,23 +277,9 @@ const Chat: React.FC = () => {
           (chunk) => {
             const content = chunk.choices[0]?.delta?.content || '';
             if (content) {
-              streamContent += content;
-              // 创建新的消息数组，包含流式内容
-              const messagesWithStream = [
-                ...currentMessages,
-                {
-                  role: 'assistant',
-                  content: streamContent,
-                },
-              ];
-              // 更新消息列表
-              setSessions(prevSessions =>
-                prevSessions.map(session =>
-                  session.id === currentSessionId
-                    ? {...session, messages: messagesWithStream}
-                    : session
-                )
-              );
+              streamContentRef.current += content;
+              // 使用打字机效果更新内容
+              updateWithTypingEffect(currentSessionId, currentMessages, streamContentRef.current);
             }
           },
           (error) => {
@@ -213,6 +287,15 @@ const Chat: React.FC = () => {
             message.error('接收消息出错');
           },
           () => {
+            // 流式响应结束时，确保显示完整内容
+            const finalMessages: Message[] = [
+              ...currentMessages,
+              {
+                role: 'assistant' as const,
+                content: streamContentRef.current,
+              },
+            ];
+            updateSessionMessages(currentSessionId, finalMessages);
             setLoading(false);
             abortController.current = null;
           },
@@ -220,10 +303,10 @@ const Chat: React.FC = () => {
       } else {
         // 处理非流式响应
         const content = response.choices[0]?.message?.content || '';
-        const messagesWithResponse = [
+        const messagesWithResponse: Message[] = [
           ...currentMessages,
           {
-            role: 'assistant',
+            role: 'assistant' as const,
             content: content,
           },
         ];
@@ -276,6 +359,15 @@ const Chat: React.FC = () => {
       },
     });
   };
+
+  // 在组件卸载时清理
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, []);
 
   return (
     <Layout className={styles.chatContainer}>
@@ -411,16 +503,43 @@ const Chat: React.FC = () => {
           )}
           <div className={styles.inputArea}>
             <div className={styles.modelSelector}>
-              <Select
-                value={currentModel}
-                onChange={setCurrentModel}
-                options={models.map(model => ({
-                  label: model.modelName,
-                  value: model.modelValue,
-                }))}
-                loading={models.length === 0}
-                placeholder="请选择模型"
+              <InputNumber
+                value={temperature}
+                onChange={(value) => setTemperature(value || 0.6)}
+                min={0}
+                max={2}
+                step={0.1}
+                precision={1}
+                style={{ width: 100, marginRight: 8 }}
+                addonBefore="温度"
               />
+              <div className={styles.knowledgeSelectWrapper}>
+                <span className={styles.knowledgeLabel}>知识库</span>
+                <Select
+                  mode="multiple"
+                  value={selectedKnowledge}
+                  onChange={setSelectedKnowledge}
+                  options={knowledgeList.map(knowledge => ({
+                    label: knowledge.knowledgeName,
+                    value: knowledge.knowledgeCode,
+                  }))}
+                  placeholder="请选择知识库"
+                  style={{ minWidth: 200 }}
+                />
+              </div>
+              <div className={styles.modelSelectWrapper}>
+                <span className={styles.modelLabel}>模型</span>
+                <Select
+                  value={currentModel}
+                  onChange={setCurrentModel}
+                  options={models.map(model => ({
+                    label: model.modelName,
+                    value: model.modelValue,
+                  }))}
+                  loading={models.length === 0}
+                  placeholder="请选择模型"
+                />
+              </div>
             </div>
             <div className={styles.inputWrapper}>
               <TextArea

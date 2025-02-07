@@ -38,6 +38,17 @@ export interface SearchResponse {
   data: SearchResult[];
 }
 
+export interface ModelOption {
+  modelName: string;
+  modelValue: string;
+}
+
+export interface KnowledgeDO {
+  knowledgeCode: string;
+  knowledgeName: string;
+  description: string;
+}
+
 export async function getFileList(params: { 
   knowledgeCode: string;
   no?: number;
@@ -102,3 +113,34 @@ export async function saveKnowledge(params: SaveKnowledgeParams) {
     data: params,
   });
 } 
+
+/** 知识库列表 */
+export async function getKnowledgeList() {
+  return request<Result<KnowledgeDO[]>>('/gateway/ai/knowledge/list', {
+    method: 'POST',
+  });
+}
+
+/** 保存或更新知识库 */
+export async function saveKnowledgeBase(params: KnowledgeDO) {
+  return request<Result<boolean>>('/gateway/ai/knowledge/save', {
+    method: 'POST',
+    data: params,
+  });
+}
+
+/** 删除知识库 */
+export async function deleteKnowledgeBase(knowledgeCode: string) {
+  return request<Result<boolean>>('/gateway/ai/knowledge/delete', {
+    method: 'POST',
+    data: { knowledgeCode },
+  });
+}
+
+/** 根据编码查询知识库 */
+export async function getKnowledgeByCode(knowledgeCode: string) {
+  return request<Result<KnowledgeDO>>('/gateway/ai/knowledge/getByCode', {
+    method: 'POST',
+    data: { knowledgeCode },
+  });
+}

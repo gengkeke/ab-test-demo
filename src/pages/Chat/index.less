@@ -145,6 +145,10 @@
     display: flex;
     flex-direction: column;
     height: 100%;
+    width: calc(100% - 120px);
+    margin: 16px auto;
+    max-width: 896px;
+    min-width: 320px;
     flex: 1;
     overflow: hidden;
     background: transparent;  // 移除原来的白色背景
@@ -215,7 +219,6 @@
       flex: 1;
       overflow-y: auto;
       padding: 0 16px;
-      margin-bottom: 16px;
 
       .messageItem {
         padding: 12px 0;
@@ -410,13 +413,46 @@
       border-top: 1px solid rgba(149, 128, 247, 0.1);
 
       .modelSelector {
-        margin-bottom: 12px;
         display: flex;
-        justify-content: flex-end;
+        align-items: center;
+        margin-bottom: 16px;
+        gap: 8px;
+
+        .knowledgeSelectWrapper {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+
+          .knowledgeLabel {
+            white-space: nowrap;
+            color: rgba(0, 0, 0, 0.85);
+          }
+
+          :global(.ant-select) {
+            flex: 1;
+          }
+        }
+
+        .modelSelectWrapper {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+
+          .modelLabel {
+            white-space: nowrap;
+            color: rgba(0, 0, 0, 0.85);
+          }
+
+          :global(.ant-select) {
+            flex: 1;
+          }
+        }
 
         :global {
-          .ant-select {
-            width: 300px !important;
+          .ant-input-number-group-wrapper {
+            width: auto !important;
           }
         }
       }

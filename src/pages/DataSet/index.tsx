@@ -1,8 +1,10 @@
-import React, {useState} from 'react';
-import {Card, Form, Input, Modal} from 'antd';
+import React, {useState, useEffect} from 'react';
+import {Card, Form, Input, Modal, message} from 'antd';
 import {FileTextOutlined, InfoCircleOutlined, PlusOutlined, SettingOutlined} from '@ant-design/icons';
 import styles from './index.less';
 import {useNavigate} from 'react-router-dom';
+import { getKnowledgeList, saveKnowledgeBase } from '@/services/dataset/api';
+import type { KnowledgeDO } from '@/services/dataset/api';
 
 const {TextArea} = Input;
 
@@ -10,6 +12,29 @@ const DataSet: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
   const navigate = useNavigate();
+  const [knowledgeList, setKnowledgeList] = useState<KnowledgeDO[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // 获取知识库列表
+  const fetchKnowledgeList = async () => {
+    try {
+      setLoading(true);
+      const res = await getKnowledgeList();
+      if (res.success) {
+        setKnowledgeList(res.data || []);
+      } else {
+        message.error(res.message || '获取知识库列表失败');
+      }
+    } catch (error) {
+      message.error('获取知识库列表失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchKnowledgeList();
+  }, []);
 
   const showModal = () => {
     setIsModalOpen(true);
@@ -21,10 +46,25 @@ const DataSet: React.FC = () => {
   };
 
   const handleOk = () => {
-    form.validateFields().then((values) => {
-      console.log(values);
-      setIsModalOpen(false);
-      form.resetFields();
+    form.validateFields().then(async (values) => {
+      try {
+        const params: KnowledgeDO = {
+          knowledgeCode: values.code,
+          knowledgeName: values.name,
+          description: values.description || '',
+        };
+        const res = await saveKnowledgeBase(params);
+        if (res.success) {
+          message.success('创建知识库成功');
+          setIsModalOpen(false);
+          form.resetFields();
+          fetchKnowledgeList();
+        } else {
+          message.error(res.message || '创建知识库失败');
+        }
+      } catch (error) {
+        message.error('创建知识库失败');
+      }
     });
   };
 
@@ -35,44 +75,29 @@ const DataSet: React.FC = () => {
   return (
     <div className={styles.container}>
       <div className={styles.cardList}>
-        {/* 海纳嗨数卡片 */}
-        <Card className={styles.card} onClick={() => handleCardClick('haishubot')}>
-          <div className={styles.settingIcon}>
-            <SettingOutlined/>
-          </div>
-          <div className={styles.cardContent}>
-            <div className={styles.iconWrapper}>
-              <FileTextOutlined/>
+        {/* 知识库列表卡片 */}
+        {knowledgeList.map((item) => (
+          <Card 
+            key={item.knowledgeCode} 
+            className={styles.card} 
+            onClick={() => handleCardClick(item.knowledgeCode)}
+          >
+            <div className={styles.settingIcon}>
+              <SettingOutlined/>
             </div>
-            <div className={styles.titleWrapper}>海纳嗨数</div>
-          </div>
-        </Card>
-
-         {/* 海纳内部卡片 */}
-         <Card className={styles.card} onClick={() => handleCardClick('chatbot')}>
-          <div className={styles.settingIcon}>
-            <SettingOutlined/>
-          </div>
-          <div className={styles.cardContent}>
-            <div className={styles.iconWrapper}>
-              <FileTextOutlined/>
+            <div className={styles.cardContent}>
+              <div className={styles.headerRow}>
+                <div className={styles.iconWrapper}>
+                  <FileTextOutlined/>
+                </div>
+                <div className={styles.titleWrapper}>{item.knowledgeName}</div>
+              </div>
+              {item.description && (
+                <div className={styles.description}>{item.description}</div>
+              )}
             </div>
-            <div className={styles.titleWrapper}>海纳内部</div>
-          </div>
-        </Card>
-
-         {/* 测试卡片 */}
-         <Card className={styles.card} onClick={() => handleCardClick('test')}>
-          <div className={styles.settingIcon}>
-            <SettingOutlined/>
-          </div>
-          <div className={styles.cardContent}>
-            <div className={styles.iconWrapper}>
-              <FileTextOutlined/>
-            </div>
-            <div className={styles.titleWrapper}>测试</div>
-          </div>
-        </Card>
+          </Card>
+        ))}
 
         {/* 创建知识库卡片 */}
         <Card className={`${styles.card} ${styles.addCard}`} onClick={showModal}>
@@ -95,6 +120,22 @@ const DataSet: React.FC = () => {
         okText="确定"
       >
         <Form form={form} layout="vertical">
+          <Form.Item
+            label={<span className={styles.required}>知识库编码</span>}
+            name="code"
+            rules={[
+              { required: true, message: '请输入知识库编码' },
+              { 
+                pattern: /^[a-zA-Z0-9]+$/, 
+                message: '只能输入英文和数字' 
+              }
+            ]}
+          >
+            <Input
+              placeholder="请输入知识库编码，只能使用英文和数字"
+              maxLength={30}
+            />
+          </Form.Item>
           <Form.Item
             label={<span className={styles.required}>知识库名称</span>}
             name="name"
