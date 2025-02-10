@@ -78,6 +78,34 @@ const CHAT_TOOLS = [
         required: ['q']
       }
     }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'merchant-backtracking',
+      nameCn: '商户回溯',
+      description: '获取商户回溯情况',
+      parameters: {
+        type: 'object',
+        properties: {
+          customerName: {
+            name: 'customerName',
+            type: 'string',
+            description: '商户名称'
+          },
+          startDate: {
+            name: 'startDate',
+            type: 'string',
+            description: '申请开始日期,日期格式yyyy-MM-dd'
+          },
+          endDate: {
+            name: 'endDate',
+            type: 'string',
+            description: '申请结束时间,日期格式yyyy-MM-dd'
+          }
+        }
+      }
+    }
   }
 ];
 

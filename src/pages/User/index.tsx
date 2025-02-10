@@ -10,6 +10,12 @@ const User: React.FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [currentRow, setCurrentRow] = useState<API.UserListItem>();
 
+  // 手机号脱敏处理
+  const maskPhoneNumber = (phone: string | undefined) => {
+    if (!phone) return '';
+    return phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2');
+  };
+
   // 角色选项定义
   const roleOptions = [
     { label: '管理员', value: 'administrator' },
@@ -25,6 +31,7 @@ const User: React.FC = () => {
     {
       title: '手机',
       dataIndex: 'phone',
+      render: (_, record) => maskPhoneNumber(record.phone),
     },
     {
       title: '账号',
