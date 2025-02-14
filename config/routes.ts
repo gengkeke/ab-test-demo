@@ -14,6 +14,7 @@ export default [
 
   {name: '对话', path: '/chat', component: './Chat'},
   {name: 'HainaBot', path: '/hainaBot', component: './HainaBot'},
+  {name: '模型', path: '/model', component: './Model'},
   {
     name: '知识库',
     path: '/dataset',
@@ -23,8 +24,9 @@ export default [
       {path: '/dataset/documentDetail', component: './DataSet/DocumentDetail'},
     ],
   },
+  {name: '应用', path: '/application', component: './Application'},
+  {name: '热门', path: '/popular', component: './Popular'},
   {name: '登录', path: '/user/login', layout: false, component: './User/Login'},
-
   {name: '用户', path: '/user', component: './User'},
   {path: '/', redirect: '/chat'},
   {path: '*', layout: false, component: './404'},
