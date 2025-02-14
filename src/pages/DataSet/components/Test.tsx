@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Input, Button, Card, Space, Select, message, Modal } from 'antd';
 import { SearchOutlined, CopyOutlined } from '@ant-design/icons';
 import { useSearchParams } from 'react-router-dom';
@@ -129,8 +129,8 @@ const Test: React.FC = () => {
           <h3>检索结果</h3>
           <div className={styles.resultsList}>
             {searchResults.map((result, index) => (
-              <Card 
-                key={index} 
+              <Card
+                key={index}
                 className={styles.resultCard}
               >
                 <div className={styles.resultHeader}>
@@ -186,4 +186,4 @@ const Test: React.FC = () => {
   );
 };
 
-export default Test; 
+export default Test;

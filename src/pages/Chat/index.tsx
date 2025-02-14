@@ -321,7 +321,7 @@ const Chat: React.FC = () => {
   const displayContentRef = useRef('');
   const pendingContentRef = useRef('');
   const animationFrameRef = useRef<number>();
-  
+
   // 创建打字机效果的更新函数
   const updateWithTypingEffect = useCallback((sessionId: string, currentMessages: Message[], newContent: string) => {
     if (pendingContentRef.current !== newContent) {
@@ -331,7 +331,7 @@ const Chat: React.FC = () => {
           if (displayContentRef.current.length < pendingContentRef.current.length) {
             // 每次添加一个字符
             displayContentRef.current = pendingContentRef.current.slice(0, displayContentRef.current.length + 1);
-            
+
             const messagesWithTyping: Message[] = [
               ...currentMessages,
               {
@@ -339,7 +339,7 @@ const Chat: React.FC = () => {
                 content: displayContentRef.current,
               },
             ];
-            
+
             setSessions(prevSessions =>
               prevSessions.map(session =>
                 session.id === sessionId
@@ -347,7 +347,7 @@ const Chat: React.FC = () => {
                   : session
               )
             );
-            
+
             animationFrameRef.current = requestAnimationFrame(animate);
           } else {
             animationFrameRef.current = undefined;
@@ -372,7 +372,7 @@ const Chat: React.FC = () => {
     if (abortController.current) {
       abortController.current.abort();
     }
-    
+
     // 取消当前的动画
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
@@ -380,7 +380,7 @@ const Chat: React.FC = () => {
     }
 
     abortController.current = new AbortController();
-    
+
     // 重置所有内容引用
     streamContentRef.current = '';
     displayContentRef.current = '';
@@ -391,7 +391,7 @@ const Chat: React.FC = () => {
 
     // 更新用户消息
     updateSessionMessages(currentSessionId, currentMessages);
-    
+
     try {
       setLoading(true);
 
@@ -401,7 +401,7 @@ const Chat: React.FC = () => {
         model: currentModel,
         temperature: temperature,
         ...(selectedKnowledge.length > 0 ? { knowledgeCodeList: selectedKnowledge } : {}),
-        ...(selectedTools.length > 0 ? { 
+        ...(selectedTools.length > 0 ? {
           tools: CHAT_TOOLS.filter(tool => selectedTools.includes(tool.function.name)),
           toolChoice: 'auto'
         } : {})
@@ -688,10 +688,10 @@ const Chat: React.FC = () => {
                           rehypePlugins={[rehypeRaw]}
                           components={customComponents}
                         >
-                          {message.content.includes('<think>') 
+                          {message.content.includes('<think>')
                             ? message.content.replace(
                                 /<think>([\s\S]*?)<\/think>/g,
-                                (_, content) => `<div class="${styles.thinkContent}"><div class="${styles.thinkHeader}"><span class="${styles.thinkIcon}"><span class="anticon"><svg viewBox="64 64 896 896" focusable="false" data-icon="bulb" width="1em" height="1em" fill="currentColor" aria-hidden="true"><path d="M632 888H392c-4.4 0-8 3.6-8 8v32c0 17.7 14.3 32 32 32h192c17.7 0 32-14.3 32-32v-32c0-4.4-3.6-8-8-8zM512 64c-181.1 0-328 146.9-328 328 0 121.4 66 227.4 164 284.1V792c0 17.7 14.3 32 32 32h264c17.7 0 32-14.3 32-32V676.1c98-56.7 164-162.7 164-284.1 0-181.1-146.9-328-328-328zm127.9 549.8L604 634.6V752H420V634.6l-35.9-20.8C305.4 568.3 256 484.5 256 392c0-141.4 114.6-256 256-256s256 114.6 256 256c0 92.5-49.4 176.3-128.1 221.8z"></path></svg></span></span><span class="${styles.thinkLabel}">深度思考</span></div><div class="${styles.thinkBody}">${content}</div></div>`
+                                (_, content) => `<details class="${styles.thinkContent}"><summary class="${styles.thinkHeader}"><span class="${styles.thinkIcon}"><span class="anticon"><svg viewBox="64 64 896 896" focusable="false" data-icon="down" width="1em" height="1em" fill="currentColor" aria-hidden="true"><path d="M884 256h-75c-5.1 0-9.9 2.4-13 6.5L512 622 208 262.5c-3.1-4.1-7.9-6.5-13-6.5H120c-6.5 0-10.4 7.4-6.5 12.5l392 512c3.1 4.1 7.9 6.5 13 6.5s9.9-2.4 13-6.5l392-512c3.9-5.1 0-12.5-6.5-12.5z"></path></svg></span></span><span class="${styles.thinkLabel}">深度思考</span></summary><div class="${styles.thinkBody}">${content}</div></details>`
                               )
                             : message.content
                           }
