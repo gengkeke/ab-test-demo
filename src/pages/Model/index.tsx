@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Application: React.FC = () => {
+const Model: React.FC = () => {
 
 
   return (
@@ -10,4 +10,4 @@ const Application: React.FC = () => {
   );
 };
 
-export default Application;
+export default Model;
