@@ -24,11 +24,6 @@ export interface ChatCompletionsResponse {
   }[];
 }
 
-export interface ModelOption {
-  modelName: string;
-  modelValue: string;
-}
-
 export async function chatCompletions(
   params: ChatCompletionsRequest,
   signal?: AbortSignal,
@@ -124,12 +119,6 @@ export async function handleStreamResponse(
   } finally {
     reader?.releaseLock();
   }
-}
-
-export async function getModels() {
-  return request<Result<ModelOption[]>>('/gateway/ai/v1/models', {
-    method: 'GET',
-  });
 }
 
 /** ChatBot助手流式聊天接口 */

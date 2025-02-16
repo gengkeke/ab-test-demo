@@ -1,4 +1,5 @@
 import { request } from '@umijs/max';
+import type { ModelRes, ModelSaveReq } from './typings';
 
 /** 获取模型列表 */
 export async function getModelList() {
@@ -16,7 +17,7 @@ export async function saveModel(params: ModelSaveReq) {
 }
 
 /** 删除模型 */
-export async function deleteModel(id: number) {
+export async function deleteModel(id: string) {
   return request<Result<boolean>>('/gateway/ai/model/delete', {
     method: 'POST',
     data: { id },

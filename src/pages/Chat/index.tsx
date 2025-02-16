@@ -7,7 +7,9 @@ import rehypeRaw from 'rehype-raw';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import {Prism as SyntaxHighlighter} from 'react-syntax-highlighter';
 import {vscDarkPlus} from 'react-syntax-highlighter/dist/esm/styles/prism';
-import {chatCompletions, handleStreamResponse, type Message, getModels, type ModelOption} from '@/services/chat/api';
+import {chatCompletions, handleStreamResponse, type Message} from '@/services/chat/api';
+import {getModelList} from '@/services/model/api';
+import type {ModelRes} from '@/services/model/typings';
 import {getKnowledgeList} from '@/services/dataset/api';
 import styles from './index.less';
 
@@ -194,7 +196,7 @@ const Chat: React.FC = () => {
 
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
-  const [models, setModels] = useState<ModelOption[]>([]);
+  const [models, setModels] = useState<ModelRes[]>([]);
   const [currentModel, setCurrentModel] = useState<string>('');
   const [temperature, setTemperature] = useState<number>(0.6);
   const [knowledgeList, setKnowledgeList] = useState<KnowledgeDO[]>([]);
@@ -238,12 +240,12 @@ const Chat: React.FC = () => {
   useEffect(() => {
     const fetchModels = async () => {
       try {
-        const response = await getModels();
+        const response = await getModelList();
         if (response.success && response.data) {
           setModels(response.data);
           // 如果有模型数据，设置第一个为默认值
           if (response.data.length > 0) {
-            setCurrentModel(response.data[0].modelValue);
+            setCurrentModel(response.data[0].modelId);
           }
         }
       } catch (error) {
@@ -505,7 +507,7 @@ const Chat: React.FC = () => {
 
   // 获取当前模型名称
   const getCurrentModelName = () => {
-    return models.find(m => m.modelValue === currentModel)?.modelName || '';
+    return models.find(m => m.modelId === currentModel)?.modelName || '';
   };
 
   // 渲染设置弹窗
@@ -566,7 +568,7 @@ const Chat: React.FC = () => {
               onChange={setCurrentModel}
               options={models.map(model => ({
                 label: model.modelName,
-                value: model.modelValue,
+                value: model.modelId,
               }))}
               loading={models.length === 0}
               placeholder="请选择模型"

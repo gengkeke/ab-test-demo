@@ -4,27 +4,19 @@ export type ModelType = 'LLM' | 'EMBEDDING' | 'STT' | 'TTS' | 'IMAGE' | 'TTI' | 
 /** 模型信息响应类型 */
 export interface ModelRes {
   id: string;
-  providerName: string;
-  providerType: string;
-  providerIcon: string;
-  apiBaseUrl: string;
-  status: number;
-  connectionStatus: number;
-  modelId: string;
   modelName: string;
-  modelType: ModelType;
-}
-
-/** 保存模型请求参数类型 */
-export interface ModelSaveReq {
-  id?: string;
+  modelId: string;
+  modelType: string;
   providerName: string;
   providerType: string;
   providerIcon?: string;
-  apiKey?: string;
   apiBaseUrl: string;
+  apiKey?: string;
+  connectionStatus: number;
   status: number;
-  modelId: string;
-  modelName: string;
-  modelType: ModelType;
+}
+
+/** 保存模型请求参数类型 */
+export interface ModelSaveReq extends Omit<ModelRes, 'id'> {
+  id?: string;
 } 

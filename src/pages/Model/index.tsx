@@ -7,11 +7,21 @@ import type { ModelRes } from '@/services/model/typings';
 import { uploadFile } from '@/services/file/api';
 import type { UploadFile } from 'antd/es/upload/interface';
 
+const MODEL_TYPE_OPTIONS = [
+  { value: 'LLM', label: '大语言模型' },
+  { value: 'EMBEDDING', label: '向量模型' },
+  { value: 'STT', label: '语音识别' },
+  { value: 'TTS', label: '语音合成' },
+  { value: 'IMAGE', label: '图片理解' },
+  { value: 'TTI', label: '图片生成' },
+  { value: 'RERANKER', label: '重排模型' },
+] as const;
+
 const Model: React.FC = () => {
   const [models, setModels] = useState<ModelRes[]>([]);
   const [visible, setVisible] = useState(false);
   const [form] = Form.useForm();
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const fetchModels = async () => {
@@ -50,7 +60,7 @@ const Model: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     Modal.confirm({
       title: '确认删除',
       content: '确定要删除该模型吗？删除后不可恢复',
@@ -85,12 +95,16 @@ const Model: React.FC = () => {
   };
 
   const getConnectionStatusBadge = (status: number) => {
-    const statusMap = {
+    const statusMap: Record<number, { status: string; text: string }> = {
       0: { status: 'default', text: '未连接' },
       1: { status: 'success', text: '已连接' },
       2: { status: 'error', text: '连接失败' },
     };
     return statusMap[status] || statusMap[0];
+  };
+
+  const getModelTypeText = (type: string) => {
+    return MODEL_TYPE_OPTIONS.find(option => option.value === type)?.label || type;
   };
 
   return (
@@ -141,7 +155,6 @@ const Model: React.FC = () => {
             <Card
               hoverable
               style={{ height: '100%' }}
-              onClick={() => navigate(`/model/detail?id=${model.id}`)}
               actions={[
                 <Button 
                   type="link" 
@@ -194,7 +207,7 @@ const Model: React.FC = () => {
                 </div>
                 <div style={{ color: '#666', marginTop: 8 }}>
                   <div style={{ marginBottom: 8 }}>提供商：{model.providerName}</div>
-                  <div>类型：{model.modelType}</div>
+                  <div>类型：{getModelTypeText(model.modelType)}</div>
                 </div>
               </div>
               <div style={{ color: '#666' }}>
@@ -364,13 +377,11 @@ const Model: React.FC = () => {
                       rules={[{ required: true, message: '请选择模型类型' }]}
                     >
                       <Select placeholder="请选择模型类型">
-                        <Select.Option value="LLM">大语言模型</Select.Option>
-                        <Select.Option value="EMBEDDING">向量模型</Select.Option>
-                        <Select.Option value="STT">语音识别</Select.Option>
-                        <Select.Option value="TTS">语音合成</Select.Option>
-                        <Select.Option value="IMAGE">图片理解</Select.Option>
-                        <Select.Option value="TTI">图片生成</Select.Option>
-                        <Select.Option value="RERANKER">重排模型</Select.Option>
+                        {MODEL_TYPE_OPTIONS.map(option => (
+                          <Select.Option key={option.value} value={option.value}>
+                            {option.label}
+                          </Select.Option>
+                        ))}
                       </Select>
                     </Form.Item>
                   </Col>

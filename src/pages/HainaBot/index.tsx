@@ -8,7 +8,9 @@ import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import styles from './index.less';
-import { Message, chatBotCompletions, handleStreamResponse, type ChatCompletionsResponse, getModels, type ModelOption } from '@/services/chat/api';
+import { Message, chatBotCompletions, handleStreamResponse, type ChatCompletionsResponse } from '@/services/chat/api';
+import { getModelList } from '@/services/model/api';
+import type { ModelRes } from '@/services/model/typings';
 
 // 自定义代码块渲染
 const CodeBlock = ({language, value}: { language: string; value: string }) => (
@@ -62,7 +64,7 @@ const HainaBot: React.FC = () => {
   const [searchValue, setSearchValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [models, setModels] = useState<ModelOption[]>([]);
+  const [models, setModels] = useState<ModelRes[]>([]);
   const [currentModel, setCurrentModel] = useState<string>('');
   const abortController = useRef<AbortController | null>(null);
   
@@ -76,12 +78,12 @@ const HainaBot: React.FC = () => {
   useEffect(() => {
     const fetchModels = async () => {
       try {
-        const response = await getModels();
+        const response = await getModelList();
         if (response.success && response.data) {
           setModels(response.data);
           // 如果有模型数据，设置第一个为默认值
           if (response.data.length > 0) {
-            setCurrentModel(response.data[0].modelValue);
+            setCurrentModel(response.data[0].modelId);
           }
         }
       } catch (error) {
@@ -270,7 +272,7 @@ const HainaBot: React.FC = () => {
             onChange={setCurrentModel}
             options={models.map(model => ({
               label: model.modelName,
-              value: model.modelValue,
+              value: model.modelId,
             }))}
             loading={models.length === 0}
             placeholder="选择模型"
