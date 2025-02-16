@@ -14,7 +14,12 @@ export default [
 
   {name: '对话', path: '/chat', component: './Chat'},
   {name: 'HainaBot', path: '/hainaBot', component: './HainaBot'},
-  {name: '应用', path: '/application', component: './Application'},
+  {name: '应用', path: '/application',
+    routes: [
+      {path: '/application', component: './Application'},
+      {path: '/application/detail', component: './Application/detail'},
+    ],
+  },
   {name: '模型', path: '/model', component: './Model'},
   {
     name: '知识库',

@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
 import { Form, Input, Button, Space, message, Modal } from 'antd';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { getKnowledgeByCode, deleteKnowledgeBase, saveKnowledgeBase } from '@/services/dataset/api';
-import type { KnowledgeDO } from '@/services/dataset/api';
+import { getKnowledgeById, deleteKnowledgeBase, saveKnowledgeBase } from '@/services/dataset/api';
+import type { KnowledgeBaseRes } from '@/services/dataset/typings';
 
 const { TextArea } = Input;
 
@@ -10,17 +10,16 @@ const Settings: React.FC = () => {
   const [form] = Form.useForm();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const code = searchParams.get('code') || '';
+  const id = searchParams.get('id') || '';
 
   // 获取知识库信息
   const fetchKnowledgeInfo = async () => {
     try {
-      const res = await getKnowledgeByCode(code);
+      const res = await getKnowledgeById(id);
       if (res.success) {
         form.setFieldsValue({
           name: res.data.knowledgeName,
-          code: res.data.knowledgeCode,
-          description: res.data.description,
+          description: res.data.knowledgeDescription,
         });
       } else {
         message.error(res.message || '获取知识库信息失败');
@@ -31,10 +30,10 @@ const Settings: React.FC = () => {
   };
 
   useEffect(() => {
-    if (code) {
+    if (id) {
       fetchKnowledgeInfo();
     }
-  }, [code]);
+  }, [id]);
 
   // 删除知识库
   const handleDelete = () => {
@@ -45,7 +44,7 @@ const Settings: React.FC = () => {
       cancelText: '取消',
       onOk: async () => {
         try {
-          const res = await deleteKnowledgeBase(code);
+          const res = await deleteKnowledgeBase(id);
           if (res.success) {
             message.success('删除成功');
             navigate('/dataset');
@@ -63,10 +62,10 @@ const Settings: React.FC = () => {
   const handleSave = async () => {
     try {
       const values = await form.validateFields();
-      const params: KnowledgeDO = {
-        knowledgeCode: values.code,
+      const params: Partial<KnowledgeBaseRes> = {
+        id,
         knowledgeName: values.name,
-        description: values.description || '',
+        knowledgeDescription: values.description,
       };
       const res = await saveKnowledgeBase(params);
       if (res.success) {
@@ -89,8 +88,7 @@ const Settings: React.FC = () => {
       form={form}
       layout="vertical"
       initialValues={{
-        name: code,
-        code: code,
+        name: '',
         description: '',
       }}
     >
@@ -100,13 +98,6 @@ const Settings: React.FC = () => {
         rules={[{ required: true, message: '请输入知识库名称' }]}
       >
         <Input placeholder="给你的知识库取一个名字吧" maxLength={20} showCount />
-      </Form.Item>
-      
-      <Form.Item
-        label="知识库Code"
-        name="code"
-      >
-        <Input disabled />
       </Form.Item>
       
       <Form.Item
